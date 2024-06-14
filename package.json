@@ -1,0 +1,58 @@
+{
+  "name": "lazy-virtual-list",
+  "version": "1.0.0",
+  "private": false,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "unpkg": "dist/lazy-virtual-list.min.js",
+  "browser": {
+    "./sfc": "src/components/lazy-virtual-list.vue"
+  },
+  "scripts": {
+    "test": "vitest",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@rollup/plugin-buble": "^0.21.3",
+    "@rollup/plugin-commonjs": "^11.1.0",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "@vue/cli-plugin-babel": "~4.3.0",
+    "@vue/cli-plugin-eslint": "~4.3.0",
+    "@vue/cli-service": "~4.3.0",
+    "@vue/test-utils": "^2.4.6",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^6.7.2",
+    "eslint-plugin-vue": "^6.2.2",
+    "jest": "^29.7.0",
+    "jsdom": "^24.1.0",
+    "rollup": "^1.17.0",
+    "rollup-plugin-vue": "^5.0.1",
+    "typescript": "^5.4.5",
+    "vite": "^5.1.5",
+    "vite-plugin-css-injected-by-js": "^3.4.0",
+    "vitest": "^1.6.0",
+    "vue": "^3.4.21",
+    "vue-tsc": "^2.0.21"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {}
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}
