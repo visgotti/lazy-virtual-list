@@ -130,6 +130,8 @@ export const resolveIndexes = ({
     endElementPosition += getItemHeight(i);
   }
 
+  console.log('RESOLVED!!!!!!', { totalItemHeight })
+
   return {
     totalItemHeight,
     startVisiblePosition,

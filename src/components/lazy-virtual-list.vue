@@ -7,10 +7,10 @@
       ref="scrollInner"
       :style="{
         'flex-direction': direction,
-        'height': `${totalHeight-beforeScrollOffset}px`,
-        'max-height': `${totalHeight-beforeScrollOffset}px`,
-        'min-height': `${totalHeight-beforeScrollOffset}px`,
-        'margin-top': `${beforeScrollOffset}px`,
+        'height': `${scrollHeight}px`,
+        'max-height': `${scrollHeight}px`,
+        'min-height': `${scrollHeight}px`,
+        'margin-top': `${scrollMarginTop}px`,
       }"
     >
       <div v-for="(item, index) in finalArray" :key="index" class="list-item">
@@ -29,7 +29,8 @@ import { computed, ref, watch, defineProps, defineEmits, onMounted, onUnmounted,
 
 
 const totalHeight = ref(0);
-const beforeScrollOffset = ref(0);
+const scrollHeight = ref(0);
+const scrollMarginTop = ref(0);
 const startIndex = ref(0);
 const endIndex = ref(0);
 const scrollOuter : Ref<HTMLDivElement> = ref<HTMLDivElement>() as Ref<HTMLDivElement>;
@@ -47,12 +48,6 @@ onUnmounted(() => {
 watch(scrollOuter, (v) => {
   if(!v) { return; }
   scrollOuter.value.onscroll = onScroll;
-
-  if(!props.startingScrollTop) {
-    return;
-  }
-
-  beforeScrollOffset.value = props.startingScrollTop;
   nextTick(() => {
     scrollOuter.value.scrollTop = props.startingScrollTop;
     handleScroll();
@@ -98,6 +93,11 @@ const props = defineProps({
   }
 });
 
+
+watch(props.dynamicSizes, () => {
+  handleScroll();
+}, { deep: true });
+
 const orderedDatasets = computed(() => {
   if(!props.sortDatasets) {
     return props.data;
@@ -121,10 +121,22 @@ const handleScroll = (e?: any) => {
       viewHeight: scrollOuter.value.clientHeight,
       ...props,
   });
-
   totalHeight.value = resolved.totalItemHeight;
-  beforeScrollOffset.value = scrollOuter.value.scrollTop
+  // beforeScrollOffset.value = scrollOuter.value.scrollTop + resolved.startOverflow;
+//  scrollMarginTop.value = beforeScrollOffset.value - (resolved.startOverflow);
+  scrollMarginTop.value = Math.max(0,  scrollOuter.value.scrollTop - scrollOuter.value.clientHeight / 2 )
+  scrollHeight.value = totalHeight.value - scrollMarginTop.value;
+  //TODO:
+  // if we do + resolved.startOverflow it seems to work if we're scrolling in the middle
+  // but without resolved.startOverflow it is correct at top and bottom
+  scrollMarginTop.value += ((resolved.startVisibleIndex - resolved.startIndex) * props.itemSize) + resolved.startOverflow;
 
+  if(resolved.startIndex - resolved.startVisibleIndex === props.itemBuffer) {
+   // scrollMarginTop.value += ((resolved.startVisibleIndex - resolved.startIndex) * props.itemSize) + resolved.startOverflow
+  } else {
+   // scrollMarginTop.value += ((resolved.startVisibleIndex - resolved.startIndex) * props.itemSize);
+  }
+  console.log('scroll margin became', scrollMarginTop.value)
   if(resolved.startIndex !== startIndex.value || resolved.endIndex !== endIndex.value) {
     startIndex.value = resolved.startIndex;
     endIndex.value = resolved.endIndex;
@@ -135,7 +147,7 @@ const handleScroll = (e?: any) => {
   }
 };
 
-const onScroll = useDebounceFn(handleScroll, 150);
+const onScroll = useDebounceFn(handleScroll, props.scrollDebounce);
 
 const emit = defineEmits<{
   (e: "load", value: { startIndex: number, endIndex: number }): void;

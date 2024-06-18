@@ -7,15 +7,24 @@
     <LazyVirtualList
       class="test"
       @load="handleLoad"
-      :data="datasets"
+      :data="formattedDatasets"
       :totalItems="totalItems"
       :itemSize="50"
+      :dynamicSizes="openItems"
       :itemBuffer="3"
-      :startingScrollTop="1000"
+      :scrollDebounce="500"
     >
       <template #default="{ item, index }">
-        <div class="item">
-          {{ index }}: {{ item }}
+        <div class="item" :class="{'expanded': index in openItems}">
+          {{ index }}: {{ item.name }}
+          <span v-if="item.isExpanded" @click="handleToggleExpand(index)">▲</span>
+          <span v-else @click="handleToggleExpand(index)">▼</span>
+          <div v-if="item.isExpanded"
+            :style="{
+              height: `${openItems[index]}px`,
+              minHeight:  `${openItems[index]}px`,
+            }"
+          ></div>
         </div>
       </template>
       <template #loading="{ index }">
@@ -29,8 +38,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import LazyVirtualList from './components/lazy-virtual-list.vue'; // Update with the correct path
+import { ref, computed } from 'vue';
+import LazyVirtualList from './components/lazy-virtual-list.vue'; 
 import type { Dataset } from './types';
 
 function generateMockDatasets(totalItems: number, itemsPerDataset: number): Dataset[] {
@@ -45,24 +54,57 @@ function generateMockDatasets(totalItems: number, itemsPerDataset: number): Data
   }
   return datasets;
 }
-export default defineComponent({
+
+export default {
   name: 'App',
   components: {
     LazyVirtualList,
   },
   setup() {
+    const expandedItemHeight = 500;
     const datasets = ref(generateMockDatasets(200, 10));
+
+    const formattedDatasets = computed(() => {
+      return datasets.value.map((d: any) => {
+        return {
+          startingIndex: d.startingIndex, 
+          data: d.data.map((item: string, i: number) => {
+            return {
+              name: item,
+              isExpanded: (d.startingIndex + i) in openItems.value
+            }
+          })
+        }
+     });
+    });
+    const openItems = ref({});
+    const handleToggleExpand = (index: number) => {
+      console.log('TOGGLE EXPAND', index);
+      if(index in openItems.value) {
+
+        console.log('WAS IN')
+        delete openItems.value[index];
+      } else {
+        console.log('NOT IN')
+        openItems.value[index] = expandedItemHeight;
+      }
+      openItems.value = { ...openItems.value };
+    }
     const totalItems = ref(300);
     function handleLoad(v: any) {
       console.log('handleLoad', v)
     }
+    const actualLen = formattedDatasets.value.map((d: any) => d.data).flat();
+    console.log('actu', actualLen.length)
     return {
+      handleToggleExpand,
+      openItems,
       handleLoad,
-      datasets,
+      formattedDatasets,
       totalItems,
     };
   },
-});
+};
 </script>
 
 <style lang="scss">
@@ -100,12 +142,17 @@ export default defineComponent({
     background-color: rgb(193, 192, 192);
     cursor: pointer;
   }
+  min-height: 50px;
+
+  &:not(.expanded) {
+    height: 50px;
+    max-height: 50px;
+  }
+
   padding: 0px;
   margin: 0px;
   display: flex;
-  height: 50px;
-  max-height: 50px;
-  min-height: 50px;
+
 }
 
 .item.loading {
