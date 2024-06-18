@@ -25,7 +25,7 @@
 
 import type { Dataset } from '../types';
 import { resolveIndexes, fillItemArray } from '../calcs';
-import { computed, ref, watch, defineProps, defineEmits, onMounted, onUnmounted, nextTick  } from 'vue';
+import { computed, ref, watch, defineProps, defineEmits, onMounted, onUnmounted, nextTick, toRefs  } from 'vue';
 
 
 const totalHeight = ref(0);
@@ -89,12 +89,13 @@ const props = defineProps({
   },
   dynamicSizes: {
     type: Object as () => {[rowIndex: string]: number },
-    required: false,
+    default: null,
   }
 });
 
+const { dynamicSizes, totalItems } = toRefs(props);
 
-watch(props.dynamicSizes, () => {
+watch(dynamicSizes, () => {
   handleScroll();
 }, { deep: true });
 
@@ -121,22 +122,11 @@ const handleScroll = (e?: any) => {
       viewHeight: scrollOuter.value.clientHeight,
       ...props,
   });
-  totalHeight.value = resolved.totalItemHeight;
-  // beforeScrollOffset.value = scrollOuter.value.scrollTop + resolved.startOverflow;
-//  scrollMarginTop.value = beforeScrollOffset.value - (resolved.startOverflow);
-  scrollMarginTop.value = Math.max(0,  scrollOuter.value.scrollTop - scrollOuter.value.clientHeight / 2 )
-  scrollHeight.value = totalHeight.value - scrollMarginTop.value;
-  //TODO:
-  // if we do + resolved.startOverflow it seems to work if we're scrolling in the middle
-  // but without resolved.startOverflow it is correct at top and bottom
-  scrollMarginTop.value += ((resolved.startVisibleIndex - resolved.startIndex) * props.itemSize) + resolved.startOverflow;
 
-  if(resolved.startIndex - resolved.startVisibleIndex === props.itemBuffer) {
-   // scrollMarginTop.value += ((resolved.startVisibleIndex - resolved.startIndex) * props.itemSize) + resolved.startOverflow
-  } else {
-   // scrollMarginTop.value += ((resolved.startVisibleIndex - resolved.startIndex) * props.itemSize);
-  }
-  console.log('scroll margin became', scrollMarginTop.value)
+  totalHeight.value = resolved.totalItemHeight;
+  scrollMarginTop.value = scrollOuter.value.scrollTop - resolved.scrollTopPadding;
+  scrollHeight.value = totalHeight.value - scrollMarginTop.value;
+
   if(resolved.startIndex !== startIndex.value || resolved.endIndex !== endIndex.value) {
     startIndex.value = resolved.startIndex;
     endIndex.value = resolved.endIndex;

@@ -12,34 +12,15 @@ describe('resolveIndexes', () => {
     };
     const {
       totalItemHeight,
-
-      startVisibleIndex,
-      startOverflow,
-      startElementPosition,
-      startVisibleElementPosition,
-  
-      endVisibleIndex,
-      endOverflow,
-      endElementPosition,
-      endVisibleElementPosition, 
-      
+      scrollTopPadding,
       startIndex,
       endIndex,
     } = resolveIndexes(params);
 
     expect(totalItemHeight).toBe(params.itemSize * params.totalItems);
-    expect(startVisibleIndex).toBe(0);
+    expect(scrollTopPadding).toBe(0);
     expect(startIndex).toBe(0);
-    expect(startOverflow).toBe(0);
-    expect(startElementPosition).toBe(0);
-    expect(startVisibleElementPosition).toBe(0);
-
-
-    expect(endVisibleIndex).toBe(9);
     expect(endIndex).toBe(12);
-    expect(endOverflow).toBe(0);
-    expect(endVisibleElementPosition).toBe(270);
-    expect(endElementPosition).toBe(360); // Adjust based on remaining height
   });
 
   it('should correctly resolve indexes and heights for static item sizes with a little scroll top', () => {
@@ -53,35 +34,39 @@ describe('resolveIndexes', () => {
     };
     const {
       totalItemHeight,
-
-      startVisibleIndex,
-      startOverflow,
-      startElementPosition,
-      startVisibleElementPosition,
-  
-      endVisibleIndex,
-      endOverflow,
-      endElementPosition,
-      endVisibleElementPosition, 
-      
+      scrollTopPadding,
       startIndex,
       endIndex,
     } = resolveIndexes(params);
 
     expect(totalItemHeight).toBe(params.itemSize * params.totalItems);
-    expect(startVisibleIndex).toBe(1);
     expect(startIndex).toBe(0);
-    expect(startOverflow).toBe(-10);
-    expect(startElementPosition).toBe(-40);
-    expect(startVisibleElementPosition).toBe(-10);
-
-
-    expect(endVisibleIndex).toBe(11);
+    expect(scrollTopPadding).toBe(40);
     expect(endIndex).toBe(14);
-    expect(endOverflow).toBe(20);
-    expect(endVisibleElementPosition).toBe(270);
-    expect(endElementPosition).toBe(360); // Adjust based on remaining height
   });
+
+  it('should correctly resolve indexes and heights for static item sizes with enough scroll to go past the initial buffer', () => {
+    const params = {
+      scrollTop: 130,
+      viewHeight: 300,
+      itemSize: 30,
+      totalItems: 100,
+      itemBuffer: 3,
+      dynamicSizes: {},
+    };
+    const {
+      totalItemHeight,
+      scrollTopPadding,
+      startIndex,
+      endIndex,
+    } = resolveIndexes(params);
+
+    expect(totalItemHeight).toBe(params.itemSize * params.totalItems);
+    expect(startIndex).toBe(1);
+    expect(scrollTopPadding).toBe(100);
+    expect(endIndex).toBe(17);
+  });
+
 
   
   it('tests dynamic sized items still get computed correctly', () => {
@@ -99,36 +84,16 @@ describe('resolveIndexes', () => {
 
     const {
       totalItemHeight,
-
-      startVisibleIndex,
-      startOverflow,
-      startElementPosition,
-      startVisibleElementPosition,
-  
-      endVisibleIndex,
-      endOverflow,
-      endElementPosition,
-      endVisibleElementPosition, 
+      scrollTopPadding,
       
       startIndex,
       endIndex,
     } = resolveIndexes(params);
 
     expect(totalItemHeight).toBe(params.itemSize*(params.totalItems-1) + dynamicSizeItem);
-    expect(startVisibleIndex).toBe(0);
     expect(startIndex).toBe(0);
-    expect(startOverflow).toBe(-140);
-    expect(startElementPosition).toBe(-140);
-    expect(startVisibleElementPosition).toBe(-140);
-
-
-    expect(endVisibleIndex).toBe(10);
+    expect(scrollTopPadding).toBe(140);
     expect(endIndex).toBe(13);
-    expect(endOverflow).toBe(10);
-    expect(endVisibleElementPosition).toBe(270);
-    expect(endElementPosition).toBe(360); // Adjust based on remaining height
-
-
   });
 });
 

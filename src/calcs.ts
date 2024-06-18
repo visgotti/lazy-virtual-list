@@ -10,17 +10,8 @@ interface ResolveIndexesParams {
 interface ResolveIndexesResult {
   startIndex: number;
   endIndex: number;
-  startVisibleIndex: number;
-  endVisibleIndex: number;
   totalItemHeight: number;
-  startOverflow: number,
-  startElementPosition: number,
-  startVisibleElementPosition: number,
-  endElementPosition: number,
-  endVisibleElementPosition: number,
-  endOverflow: number,
-  startVisiblePosition: number,
-  endVisiblePosition: number;
+  scrollTopPadding: number;
 }
 
 type Dataset = {
@@ -65,7 +56,6 @@ export const fillItemArray = ({
   return items;
 };
 
-
 export const resolveIndexes = ({
   scrollTop,
   viewHeight,
@@ -87,12 +77,11 @@ export const resolveIndexes = ({
   const totalItemHeight = unresizedItemHeights + resizedItemHeights;
 
   let startVisiblePosition = 0;
-  let startOverflow = 0;
+
   for (let i = 0; i < totalItems; i++) {
     const itemHeight = getItemHeight(i);
     const next = offset + itemHeight;
     if (next > scrollTop) {
-      startOverflow =  (next - scrollTop) - itemHeight;
       startVisibleIndex = i;
       startVisiblePosition = next - (next-scrollTop);
       break;
@@ -100,52 +89,32 @@ export const resolveIndexes = ({
     offset = next;
   }
   const startVisibleElementPosition = offset - scrollTop; 
-  offset = startOverflow;
 
-  let endOverflow = 0;
+  offset = startVisibleElementPosition;
+
   let endVisibleIndex = startVisibleIndex;
-  let endVisiblePosition = 0;
   for (let i = startVisibleIndex; i < totalItems; i++) {
     const itemHeight = getItemHeight(i);
     const next = offset + itemHeight;
     if (next >= viewHeight) {
-      endOverflow = (next - viewHeight);
       endVisibleIndex = i;
-      endVisiblePosition = next - (next-viewHeight);
       break;
     }
     offset = next;
   }
 
-  const endVisibleElementPosition = offset - endOverflow;
   const startIndex = Math.max(startVisibleIndex - itemBuffer, 0);
   const endIndex = Math.min(endVisibleIndex + itemBuffer, totalItems - 1);
-  let startElementPosition = startVisibleElementPosition;
-  for(let i = startVisibleIndex; i > startIndex; i--) {
-    startElementPosition -= getItemHeight(i);
-  }
 
-  let endElementPosition = endVisibleElementPosition;
-  for(let i = endVisibleIndex; i < endIndex; i++) {
-    endElementPosition += getItemHeight(i);
-  }
+  let scrollTopPadding = Math.abs(startVisibleElementPosition);
 
-  console.log('RESOLVED!!!!!!', { totalItemHeight })
+  for(let i = startVisibleIndex-1; i >= startIndex; i--) {
+    scrollTopPadding += getItemHeight(i);
+  }
 
   return {
+    scrollTopPadding,
     totalItemHeight,
-    startVisiblePosition,
-    endVisiblePosition,
-    startVisibleIndex,
-    startOverflow,
-    startElementPosition,
-    startVisibleElementPosition,
-
-    endVisibleIndex,
-    endOverflow,
-    endElementPosition,
-    endVisibleElementPosition, 
-    
     startIndex,
     endIndex,
   };

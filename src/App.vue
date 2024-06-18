@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, Ref } from 'vue';
 import LazyVirtualList from './components/lazy-virtual-list.vue'; 
 import type { Dataset } from './types';
 
@@ -67,7 +67,7 @@ export default {
     const formattedDatasets = computed(() => {
       return datasets.value.map((d: any) => {
         return {
-          startingIndex: d.startingIndex, 
+          startingIndex: d.startingIndex,
           data: d.data.map((item: string, i: number) => {
             return {
               name: item,
@@ -77,15 +77,11 @@ export default {
         }
      });
     });
-    const openItems = ref({});
+    const openItems : Ref<{[itemIndex: string]: number }> = ref({});
     const handleToggleExpand = (index: number) => {
-      console.log('TOGGLE EXPAND', index);
       if(index in openItems.value) {
-
-        console.log('WAS IN')
         delete openItems.value[index];
       } else {
-        console.log('NOT IN')
         openItems.value[index] = expandedItemHeight;
       }
       openItems.value = { ...openItems.value };
@@ -138,6 +134,12 @@ export default {
 }
 
 .item {
+  &.expanded {
+    background-color: red;
+    &:hover {
+      background-color: darken(red, 15%);
+    }
+  }
   &:hover {
     background-color: rgb(193, 192, 192);
     cursor: pointer;
