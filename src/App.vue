@@ -10,8 +10,9 @@
       :data="formattedDatasets"
       :totalItems="totalItems"
       :itemSize="50"
-      :dynamicSizes="openItems"
       :itemBuffer="3"
+      :autoDetectSizes="false"
+      :dynamicSizes="openItems"
       :scrollDebounce="500"
     >
       <template #default="{ item, index }">
@@ -61,8 +62,12 @@ export default {
     LazyVirtualList,
   },
   setup() {
+
+    const totalItems = ref(300);
+    const testLoadedCount = ref(200);
+
     const expandedItemHeight = 500;
-    const datasets = ref(generateMockDatasets(200, 10));
+    const datasets = computed(() => generateMockDatasets(testLoadedCount.value, 10));
 
     const formattedDatasets = computed(() => {
       return datasets.value.map((d: any) => {
@@ -86,7 +91,6 @@ export default {
       }
       openItems.value = { ...openItems.value };
     }
-    const totalItems = ref(300);
     function handleLoad(v: any) {
       console.log('handleLoad', v)
     }
