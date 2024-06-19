@@ -7,13 +7,14 @@
     <LazyVirtualList
       class="test"
       @load="handleLoad"
-      :data="formattedDatasets"
+      :datasets="formattedDatasets"
       :totalItems="totalItems"
-      :itemSize="50"
+      :itemSize="65"
       :itemBuffer="3"
-      :autoDetectSizes="false"
+      :autoDetectSizes="true"
       :dynamicSizes="openItems"
-      :scrollDebounce="500"
+      :scrollDebounce="100"
+      :scrollThrottle="0"
     >
       <template #default="{ item, index }">
         <div class="item" :class="{'expanded': index in openItems}">
@@ -95,7 +96,6 @@ export default {
       console.log('handleLoad', v)
     }
     const actualLen = formattedDatasets.value.map((d: any) => d.data).flat();
-    console.log('actu', actualLen.length)
     return {
       handleToggleExpand,
       openItems,
@@ -148,15 +148,17 @@ export default {
     background-color: rgb(193, 192, 192);
     cursor: pointer;
   }
+  margin: 0px;
+  padding: 0px;
   min-height: 50px;
+  margin-top: 5px;
+  padding-bottom: 10px;
 
   &:not(.expanded) {
     height: 50px;
     max-height: 50px;
   }
 
-  padding: 0px;
-  margin: 0px;
   display: flex;
 
 }

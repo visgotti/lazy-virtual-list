@@ -28,6 +28,7 @@ import { resolveIndexes, fillItemArray } from '../calcs';
 import { computed, ref, watch, defineProps, defineEmits, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
 import type { PropType, Ref } from 'vue';
 import { useDebounceFn } from '../useDebounce';
+import { useThrottle } from '../useThrottle';
 
 const totalLength = ref(0);
 const scrollLength = ref(0);
@@ -42,9 +43,13 @@ const props = defineProps({
     type: Number,
     default: 0,
   },
+  scrollThrottle: {
+    type: Number,
+    default: 0
+  },
   scrollDebounce: {
     type: Number,
-    default: 50,
+    default: 0,
   },
   direction: {
     type: String,
@@ -55,8 +60,12 @@ const props = defineProps({
     default: true,
   },
   data: {
+    type: Array as PropType<any>,
+    required: false,
+  },
+  datasets: {
     type: Array as PropType<Dataset[]>,
-    required: true,
+    required: false,
   },
   itemBuffer: {
     type: Number,
@@ -71,7 +80,7 @@ const props = defineProps({
     required: true,
   },
   dynamicSizes: {
-    type: Object as () => { [rowIndex: string]: number },
+    type: Object as () => { [itemIndex: string]: number },
     default: null,
   },
   autoDetectSizes: {
@@ -81,11 +90,22 @@ const props = defineProps({
 });
 
 
-const { dynamicSizes, autoDetectSizes, direction, totalItems } = toRefs(props);
+const { dynamicSizes, autoDetectSizes, direction, totalItems, datasets, data, sortDatasets } = toRefs(props);
+
+if(props.scrollThrottle && props.scrollDebounce && props.scrollThrottle > props.scrollDebounce) {
+  console.warn("Warning: The 'scrollDebounce' prop value is less than the 'scrollThrottle' prop value. This configuration is not recommended because if the debounce delay is shorter than the throttle delay, the debounce functionality becomes redundant. Please set 'scrollDebounce' to be equal to or greater than 'scrollThrottle' to ensure both functionalities work as intended.");
+}
+
 const clientLengthProp = computed(() => direction.value === 'column' ? 'clientHeight' : 'clientWidth');
 const lengthProp = computed(() => direction.value === 'column' ? 'height' : 'width');
 const scrollProp = computed(() => direction.value === 'column' ? 'scrollTop' : 'scrollLeft');
 const marginProp = computed(() => direction.value === 'column' ? 'marginTop' : 'marginLeft');
+const marginProp2 = computed(() => direction.value === 'column' ? 'marginBottom' : 'marginRight');
+
+const shouldSortDatasets = computed(() => {
+  return datasets?.value?.length && sortDatasets.value;
+});
+
 const internalDynamicSizes = ref<{ [key: number]: number }>({});
 
 if(dynamicSizes.value && autoDetectSizes.value) {
@@ -101,12 +121,19 @@ watch([dynamicSizesRef, totalItems], () => {
   handleScroll();
 }, { deep: true });
 
+
 const orderedDatasets = computed(() => {
-  if (!props.sortDatasets) {
-    return props.data;
-  } else {
-    return [...props.data].sort((a, b) => a.startingIndex - b.startingIndex);
-  }
+  const datasetsEnsured = datasets?.value 
+    ? datasets.value
+    : [{ 
+      startingIndex: 0, 
+      data: data?.value || []
+     }];
+
+  if (!shouldSortDatasets.value) {
+    return datasetsEnsured;
+  } 
+  return datasetsEnsured.sort((a, b) => a.startingIndex - b.startingIndex);
 });
 
 const finalArray = computed(() => {
@@ -140,19 +167,22 @@ const handleScroll = (e?: any) => {
   }
 };
 
-const onScrollDebounced = useDebounceFn(handleScroll, props.scrollDebounce);
+const throttledScroll = props.scrollThrottle ? useThrottle(handleScroll, props.scrollThrottle) : handleScroll;
+const debouncedScroll = props.scrollDebounce ? useDebounceFn(handleScroll, props.scrollDebounce) : throttledScroll;
 
 const emit = defineEmits<{
   (e: 'scroll', value: number): void;
   (e: 'load', value: { startIndex: number; endIndex: number }): void;
 }>();
 
+
 onMounted(() => {
-  window.addEventListener('scroll', onScrollDebounced);
+  window.addEventListener('scroll', debouncedScroll);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', onScrollDebounced);
+  window.removeEventListener('scroll', debouncedScroll);
+  Object.values(resizeObservers).forEach(({ observer }) => observer.disconnect());
 });
 
 watch(scrollOuter, (v) => {
@@ -160,7 +190,7 @@ watch(scrollOuter, (v) => {
     return;
   }
   scrollOuter.value.onscroll = () => {
-    onScrollDebounced();
+    debouncedScroll();
     emit('scroll', scrollOuter.value[scrollProp.value])
   };
   nextTick(() => {
@@ -186,15 +216,45 @@ const scrollInnerStyleObject = computed(() => {
     [`${marginProp.value}`]: `${scrollMargin.value}px`,
   }
 });
+const resizeObservers: {[index: string]: { el: HTMLElement, observer: ResizeObserver } } = {}
+
+watch([startIndex, endIndex], () => {
+  Object.keys(resizeObservers).forEach((key) => {
+    const observerIndex = parseInt(key);
+    if (observerIndex >= startIndex.value && observerIndex <= endIndex.value) {
+     return;
+    }
+    resizeObservers[key].observer.disconnect();
+    delete resizeObservers[key];
+  });
+});
 
 const setItemRef = (index: number, el: HTMLElement) => {
   if (el && autoDetectSizes.value) {
-    const startedIdx = startIndex.value;
-    nextTick(() => {
+    const finalIndex = startIndex.value + index;
+    const computeLength = () => {
       const length = el.getBoundingClientRect()[lengthProp.value];
-      if(length !== props.itemSize) {
-        internalDynamicSizes.value[startedIdx + index] = length;
+      const style = window.getComputedStyle(el);
+      const margin1 = parseFloat(style[marginProp.value]);
+      const margin2 = parseFloat(style[marginProp2.value]);
+      const finalLength = length + margin1 + margin2;
+      if(finalLength !== props.itemSize) {
+        internalDynamicSizes.value[finalIndex] = finalLength;
+      } else {
+        delete internalDynamicSizes.value[finalIndex];
       }
+    }
+    nextTick(() => {
+      computeLength();
+      const existingObserver = resizeObservers[finalIndex];
+      if (existingObserver) {
+        if(existingObserver.el === el) {
+          return;
+        }
+        existingObserver.observer.disconnect();
+        delete resizeObservers[finalIndex];
+      }
+      resizeObservers[finalIndex] = { observer: new ResizeObserver(computeLength), el }
     })
   }
 };
