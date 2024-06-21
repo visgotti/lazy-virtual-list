@@ -119,3 +119,26 @@ export const resolveIndexes = ({
     endIndex,
   };
 };
+
+export function mergeAdjacentDatasets(datasets: Dataset[]): Dataset[] {
+  if (datasets.length === 0) return datasets;
+  datasets.sort((a, b) => a.startingIndex - b.startingIndex);
+
+  const mergedDatasets: Dataset[] = [];
+  let currentMerged: Dataset = { startingIndex: datasets[0].startingIndex, data: [...datasets[0].data] };
+
+  for (let i = 1; i < datasets.length; i++) {
+    const current = datasets[i];
+
+    if (currentMerged.startingIndex + currentMerged.data.length >= current.startingIndex) {
+      const overlap = current.startingIndex - currentMerged.startingIndex;
+      const nonOverlappingPart = current.data.slice(Math.max(0, currentMerged.data.length - overlap));
+      currentMerged.data = currentMerged.data.concat(nonOverlappingPart);
+    } else {
+      mergedDatasets.push(currentMerged);
+      currentMerged = { startingIndex: current.startingIndex, data: [...current.data] };
+    }
+  }
+  mergedDatasets.push(currentMerged);
+  return mergedDatasets;
+}

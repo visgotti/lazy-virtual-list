@@ -1,4 +1,4 @@
-import { fillItemArray, resolveIndexes } from '../src/calcs'; // Adjust the import according to your file structure
+import { fillItemArray, mergeAdjacentDatasets, resolveIndexes } from '../src/calcs'; // Adjust the import according to your file structure
 
 describe('resolveIndexes', () => {
   it('should correctly resolve indexes and heights for static item sizes', () => {
@@ -141,3 +141,47 @@ describe('fillItemArray', () => {
     expect(result).toEqual(['c', 'd', 'e', 'f']);
   });
 });
+
+
+
+describe('mergeAdjacentDatasets', () => {
+  it('sorts and merges the adjacent datasets', () => {
+
+    const datasets: Dataset[] = [
+      { startingIndex: 10, data: Array.from({ length: 20 }).fill(null) },
+      { startingIndex: 8, data: Array.from({ length: 30 }).fill(null) },
+      { startingIndex: 6, data: Array.from({ length: 12 }).fill(null) },
+      { startingIndex: 5, data: Array.from({ length: 10 }).fill(null) },
+      { startingIndex: 10, data: Array.from({ length: 25 }).fill(null) },
+    ];
+    const output = mergeAdjacentDatasets(datasets);
+    expect(output.length).toEqual(1);
+    expect(output[0].startingIndex).toEqual(5);
+    expect(output[0].data.length).toEqual(33);
+  });
+
+  it('will not merge the non adjacent datasets', () => {
+
+    const datasets: Dataset[] = [
+      { startingIndex: 10, data: Array.from({ length: 20 }).fill(null) },
+      { startingIndex: 8, data: Array.from({ length: 30 }).fill(null) },
+      { startingIndex: 45, data: Array.from({ length: 12 }).fill(null) },
+      { startingIndex: 6, data: Array.from({ length: 12 }).fill(null) },
+      { startingIndex: 5, data: Array.from({ length: 10 }).fill(null) },
+      { startingIndex: 10, data: Array.from({ length: 25 }).fill(null) },
+      { startingIndex: 40, data: Array.from({ length: 30 }) },
+      { startingIndex: 42, data: Array.from({ length: 35 }).fill(null) },
+      { startingIndex: 39, data: Array.from({ length: 20 }).fill(null) },
+    ];
+    const output = mergeAdjacentDatasets(datasets);
+    console.log('pout was', output);
+    expect(output.length).toEqual(2);
+    expect(output[0].startingIndex).toEqual(5);
+    expect(output[0].data.length).toEqual(33);
+
+    expect(output[1].startingIndex).toEqual(39);
+    // 77 (max startingIndex + length, second to last item array should go to the highest index)
+    // and 39 is the lowest starting index for second array
+    expect(output[1].data.length).toEqual(77-39);
+  });
+})

@@ -2,9 +2,9 @@
   "name": "lazy-virtual-list",
   "version": "1.0.0",
   "private": false,
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "unpkg": "dist/lazy-virtual-list.min.js",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.es.js",
+  "unpkg": "dist/index.umd.js",
   "browser": {
     "./sfc": "src/components/lazy-virtual-list.vue"
   },
