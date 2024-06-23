@@ -158,6 +158,16 @@ describe('mergeAdjacentDatasets', () => {
     expect(output.length).toEqual(1);
     expect(output[0].startingIndex).toEqual(5);
     expect(output[0].data.length).toEqual(33);
+
+    const datasets2: Dataset[] = [
+      { startingIndex: 0, data: Array.from({ length: 20 }).fill(null) },
+      { startingIndex: 20, data: Array.from({ length: 30 }).fill(null) },
+    ];
+    const output2 = mergeAdjacentDatasets(datasets2);
+    expect(output2.length).toEqual(1);
+    expect(output2[0].startingIndex).toEqual(0);
+    expect(output2[0].data.length).toEqual(50);
+
   });
 
   it('will not merge the non adjacent datasets', () => {

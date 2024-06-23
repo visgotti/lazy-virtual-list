@@ -167,14 +167,14 @@ const handleScroll = (e?: any) => {
   }
 };
 
-const throttledScroll = props.scrollThrottle ? useThrottle(handleScroll, props.scrollThrottle) : handleScroll;
-const debouncedScroll = props.scrollDebounce ? useDebounceFn(handleScroll, props.scrollDebounce) : throttledScroll;
-
 const emit = defineEmits<{
   (e: 'scroll', value: number): void;
   (e: 'load', value: { startIndex: number; endIndex: number }): void;
 }>();
 
+
+const throttledScroll = props.scrollThrottle ? useThrottle(handleScroll, props.scrollThrottle, props.debounce || props.scrollThrottle) : handleScroll;
+const debouncedScroll = props.scrollDebounce ? useDebounceFn(handleScroll, props.scrollDebounce) : throttledScroll;
 
 onMounted(() => {
   window.addEventListener('scroll', debouncedScroll);
