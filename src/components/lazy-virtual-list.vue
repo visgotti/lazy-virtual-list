@@ -79,6 +79,10 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  minItemSize: {
+    type: Number,
+    default: 0
+  },
   dynamicSizes: {
     type: Object as () => { [itemIndex: string]: number },
     default: null,
@@ -178,10 +182,12 @@ const debouncedScroll = props.scrollDebounce ? useDebounceFn(handleScroll, props
 
 onMounted(() => {
   window.addEventListener('scroll', debouncedScroll);
+  window.addEventListener('resize', debouncedScroll);
 });
 
 onUnmounted(() => {
   window.removeEventListener('scroll', debouncedScroll);
+  window.removeEventListener('resize', debouncedScroll);
   Object.values(resizeObservers).forEach(({ observer }) => observer.disconnect());
 });
 
@@ -237,7 +243,7 @@ const setItemRef = (index: number, el: HTMLElement) => {
       const style = window.getComputedStyle(el);
       const margin1 = parseFloat(style[marginProp.value]);
       const margin2 = parseFloat(style[marginProp2.value]);
-      const finalLength = length + margin1 + margin2;
+      const finalLength = Math.max(length + margin1 + margin2, props.minItemSize);
       if(finalLength !== props.itemSize) {
         internalDynamicSizes.value[finalIndex] = finalLength;
       } else {
