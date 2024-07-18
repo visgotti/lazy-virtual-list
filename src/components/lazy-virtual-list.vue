@@ -201,8 +201,14 @@ watch(scrollOuter, (v) => {
   };
   nextTick(() => {
     if(!scrollOuter.value) { return; }
-    scrollOuter.value[scrollProp.value] = props.scrollStart;
     handleScroll();
+    if(!props.scrollStart) {
+      return;
+    }
+    nextTick(() => {
+      scrollOuter.value[scrollProp.value] = props.scrollStart;
+      handleScroll();
+    });
   });
 });
 
