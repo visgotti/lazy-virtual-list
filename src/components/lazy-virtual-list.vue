@@ -52,7 +52,7 @@ const props = defineProps({
     default: 0,
   },
   direction: {
-    type: String,
+    type: String as PropType<'row' | 'column'>,
     default: 'column',
   },
   sortDatasets: {
@@ -177,7 +177,7 @@ const emit = defineEmits<{
 }>();
 
 
-const throttledScroll = props.scrollThrottle ? useThrottle(handleScroll, props.scrollThrottle, props.debounce || props.scrollThrottle) : handleScroll;
+const throttledScroll = props.scrollThrottle ? useThrottle(handleScroll, props.scrollThrottle, props.scrollDebounce || props.scrollThrottle) : handleScroll;
 const debouncedScroll = props.scrollDebounce ? useDebounceFn(handleScroll, props.scrollDebounce) : throttledScroll;
 
 onMounted(() => {
