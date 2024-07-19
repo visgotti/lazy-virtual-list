@@ -189,12 +189,14 @@ onUnmounted(() => {
   window.removeEventListener('scroll', debouncedScroll);
   window.removeEventListener('resize', debouncedScroll);
   Object.values(resizeObservers).forEach(({ observer }) => observer.disconnect());
+  resetOuterObserver();
 });
 
 watch(scrollOuter, (v) => {
   if (!v) {
     return;
   }
+  initOuterObserver();
   scrollOuter.value.onscroll = () => {
     debouncedScroll();
     emit('scroll', scrollOuter.value[scrollProp.value])
@@ -229,6 +231,21 @@ const scrollInnerStyleObject = computed(() => {
   }
 });
 const resizeObservers: {[index: string]: { el: HTMLElement, observer: ResizeObserver } } = {}
+
+let outerResizeObserver : ResizeObserver | null = null;
+
+const resetOuterObserver = () => {
+  outerResizeObserver?.disconnect(); 
+  outerResizeObserver = null;
+}
+const initOuterObserver = () => {
+  resetOuterObserver();
+  if(!scrollOuter.value) {
+    return;
+  }
+  outerResizeObserver = new ResizeObserver(handleScroll);
+  outerResizeObserver.observe(scrollOuter.value);
+}
 
 watch([startIndex, endIndex], () => {
   Object.keys(resizeObservers).forEach((key) => {
